@@ -164,40 +164,35 @@ func (service *PromoteService) UpdatePromote(ctx context.Context, id string, req
 		return err
 	}
 
-	oldImages, err := service.ImageService.GetImagesByID(ctx, promote.ID)
+	var url *string
+
+	if imageFile != nil {
+		imgURL, err := helper.UploadFileGCS(imageFile)
+		if err != nil {
+			return err
+		}
+		url = imgURL
+	}
+
+	img := &imageent.Images{}
+	err = service.db.NewSelect().
+		Model(img).
+		Where("s_id = ?", id).
+		Scan(ctx)
 	if err != nil {
 		return err
 	}
 
-	if req.RemainingImageID != "" {
-		for _, img := range oldImages {
-			if img.ID != req.RemainingImageID {
-				err = service.ImageService.DeleteImageByID(ctx, img.ID)
-				if err != nil {
-					return err
-				}
-			}
-		}
-	} else {
-		for _, img := range oldImages {
-			err = service.ImageService.DeleteImageByID(ctx, img.ID)
-			if err != nil {
-				return err
-			}
-		}
+	if url != nil {
+		img.ImageURL = *url
 	}
 
-	if imageFile != nil {
-		imgURLPtr, err := helper.UploadFileGCS(imageFile)
-		if err != nil {
-			return err
-		}
-		if imgURLPtr != nil {
-			err = service.ImageService.CreateImagesWithType(ctx, *imgURLPtr, "promote", promote.ID)
-			if err != nil {
-				return err
-			}
-		}
+	_, err = service.db.NewUpdate().
+		Model(img).
+		Where("s_id = ?", id).
+		Exec(ctx)
+	if err != nil {
+		return err
 	}
 
 	return nil
