@@ -126,10 +126,17 @@ func (service *ZoneService) UpdateZone(ctx context.Context, id string, req *zone
 		return err
 	}
 
-	zones.ZoneName = req.ZoneName
-	zones.Lat = req.Lat
-	zones.Long = req.Long
+	if req.ZoneName != "" {
+		zones.ZoneName = req.ZoneName
+	}
 
+	if req.Lat != 0 {
+		zones.Lat = req.Lat
+	}
+
+	if req.Long != 0 {
+		zones.Long = req.Long
+	}
 	_, err = service.db.NewUpdate().
 		Model(zones).
 		Where("id = ?", id).
