@@ -1,0 +1,53 @@
+version: "3"
+
+vars:
+  COMMIT_MSG: $(git log -1 --pretty=%B)
+  COMMIT_SHORT_SHA: $(git rev-parse --short HEAD)
+  TAG_NAME: $(git describe main)
+  GO_VERSION: $(curl -sSL https://go.dev/VERSION?m=text | sed '1,1!d' )
+tasks:
+  default:
+    - echo {{ .COMMIT_SHORT_SHA }}
+    - echo {{ .GO_VERSION }}
+    - echo {{ OS }}
+    - echo {{ ARCH }}
+    - echo https://go.dev/dl/go{{ .GO_VERSION }}.{{ OS }}-{{ ARCH }}.tar.gz
+  proto:
+    - >-
+      buf generate
+      # --path app/grpc/pb/base/
+      # --path app/grpc/pb/user/
+  build:
+    - task: proto
+    - go build -o ./dist/main .
+
+  buf:
+    - >-
+      buf generate
+      --path app/grpc/pb/base/
+  go:file:install:
+    - rm -rf ~/.local/go
+    - curl -sSfL https://go.dev/dl/{{ .GO_VERSION }}.{{ OS }}-{{ ARCH }}.tar.gz -o {{ .GO_VERSION }}.{{ OS }}-{{ ARCH }}.tar.gz
+    - tar -C ~/.local/ -xzf {{ .GO_VERSION }}.{{ OS }}-{{ ARCH }}.tar.gz
+    - rm {{ .GO_VERSION }}.{{ OS }}-{{ ARCH }}.tar.gz
+    - go version
+  go:install:
+    - rm -rf ~/.local/go
+    - curl -sSfL https://go.dev/dl/{{ .GO_VERSION }}.{{ OS }}-{{ ARCH }}.tar.gz | tar xz -C ~/.local/
+    - go version
+  tools:
+    - npx husky install || exit 0
+    - curl -sSfL https://raw.githubusercontent.com/cosmtrek/air/master/install.sh | sh -s -- -b ~/.local/bin
+    - >-
+      go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+    - >-
+      go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+    - >-
+      go install
+      github.com/bufbuild/buf/cmd/buf@latest
+      github.com/bufbuild/buf/cmd/protoc-gen-buf-breaking@latest
+      github.com/bufbuild/buf/cmd/protoc-gen-buf-lint@latest
+    - >-
+      go install
+      github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@latest
+      github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2@latest

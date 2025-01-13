@@ -1,0 +1,37 @@
+syntax = "proto3";
+package user;
+option go_package = "app/app/grpc/user";
+
+import "google/api/annotations.proto";
+import "base/base.proto";
+import "google/protobuf/duration.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+service User {
+  rpc CreateUser(UserData) returns (UserDataRespose) {
+    option (google.api.http) = {
+      post : "/v1/users/create"
+    };
+  }
+  rpc GetUser(UserID) returns (UserDataRespose) {
+    option (google.api.http) = {
+      post : "/v1/users"
+    };
+  }
+}
+message UserID { string ID = 1; }
+message UserData {
+  optional int64 id = 1;
+  string user_type = 2;
+  optional string username = 3 [ deprecated = true ];
+  string phone_number = 4;
+  string first_name = 5;
+  string last_name = 6;
+  optional google.protobuf.Duration create_at = 7;
+  reserved 8 to 100;
+}
+message UserDataRespose {
+  base.Response.Status status = 1;
+  base.Response.Message message = 2;
+  UserData data = 3;
+}

@@ -1,0 +1,15 @@
+syntax = "proto3";
+package base;
+option go_package = "app/app/grpc/base";
+
+
+message Response {
+  message Status {
+    int32 code = 1;
+    string message = 2;
+  }
+  message Message {
+    string code = 1;
+    string message = 2;
+  }
+}
