@@ -29,6 +29,7 @@ func StorageConfig(ctx context.Context) *storage.Client {
 
 	client, err := storage.NewClient(ctx)
 	if err != nil {
+		log.Error("Failed to create client: %v", err)
 		panic(err)
 	}
 
