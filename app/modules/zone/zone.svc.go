@@ -2,6 +2,7 @@ package zone
 
 import (
 	"app/app/modules/image"
+	imageent "app/app/modules/image/ent"
 	zonedto "app/app/modules/zone/dto"
 	zoneent "app/app/modules/zone/ent"
 	helper "app/helper/googleStorage"
@@ -9,7 +10,6 @@ import (
 	"context"
 	"errors"
 	"mime/multipart"
-	"strings"
 
 	"github.com/uptrace/bun"
 )
@@ -73,6 +73,7 @@ func (service *ZoneService) GetZoneByID(ctx context.Context, id string) (*zonedt
 		Column("z.id", "z.zone_name", "z.lat", "z.long").
 		ColumnExpr("i.id as images__id").
 		ColumnExpr("i.image_url as images__url").
+		ColumnExpr("i.type as images__type").
 		Join("left join images as i ON z.id = i.s_id AND i.type = ? AND i.deleted_at IS NULL", "zone").
 		Where("z.id = ?", id)
 
@@ -92,7 +93,9 @@ func (service *ZoneService) GetAllZone(ctx context.Context, req *zonedto.ZoneGet
 		Column("z.id", "z.zone_name", "z.lat", "z.long").
 		ColumnExpr("i.id as images__id").
 		ColumnExpr("i.image_url as images__url").
-		Join("LEFT JOIN images as i ON z.id = i.s_id AND i.type = ? AND i.deleted_at IS NULL", "zone").
+		ColumnExpr("i.type as images__type").
+		Join("LEFT JOIN images as i ON z.id = i.s_id AND i.type = ?", "zone").
+		Where("i.deleted_at IS NULL").
 		Where("z.deleted_at IS NULL")
 
 	if req.Search != "" {
@@ -138,47 +141,39 @@ func (service *ZoneService) UpdateZone(ctx context.Context, id string, req *zone
 	if err != nil {
 		return err
 	}
-	remainingImageIDs := []string{}
-	if len(req.RemainingImageIDs) > 0 {
-		remainingImageIDs = strings.Split(req.RemainingImageIDs[0], ",")
-	}
 
-	remainingImageMap := make(map[string]bool)
-	for _, id := range remainingImageIDs {
-		remainingImageMap[id] = true
-	}
+	var url *string
 
-	oldImages, err := service.ImageService.GetImagesByID(ctx, zones.ID)
-	if err != nil {
-		return err
-	}
-
-	for _, oldImage := range oldImages {
-		if !remainingImageMap[oldImage.ID] {
-			err = service.ImageService.DeleteImageByID(ctx, oldImage.ID)
-			if err != nil {
-				return err
-			}
+	if len(files) > 0 {
+		imgURL, err := helper.UploadFileGCS(files[0])
+		if err != nil {
+			return err
 		}
+		url = imgURL
 	}
 
-	for _, file := range files {
-		imgURLPtr, err := helper.UploadFileGCS(file)
+	for i := range req.RemainingImageIDs {
+		img := &imageent.Images{}
+		err := service.db.NewSelect().
+			Model(img).
+			Where("id = ?", req.RemainingImageIDs[i]).
+			Scan(ctx)
 		if err != nil {
 			return err
 		}
 
-		var imgURL string
-		if imgURLPtr != nil {
-			imgURL = *imgURLPtr
-		} else {
-			imgURL = ""
+		if url != nil {
+			img.ImageURL = *url
 		}
 
-		err = service.ImageService.CreateImagesWithType(ctx, imgURL, "zone", zones.ID)
+		_, err = service.db.NewUpdate().
+			Model(img).
+			Where("id = ?", req.RemainingImageIDs[i]).
+			Exec(ctx)
 		if err != nil {
 			return err
 		}
+
 	}
 
 	return nil
