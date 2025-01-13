@@ -39,8 +39,6 @@ func (service *ZoneService) CreateZone(ctx context.Context, req *zonedto.ZoneReq
 		return err
 	}
 
-	imageURLs := []string{}
-
 	for _, file := range files {
 		imgURLPtr, err := helper.UploadFileGCS(file)
 		if err != nil {
@@ -53,8 +51,6 @@ func (service *ZoneService) CreateZone(ctx context.Context, req *zonedto.ZoneReq
 		} else {
 			imgURL = ""
 		}
-
-		imageURLs = append(imageURLs, imgURL)
 
 		err = service.ImageService.CreateImagesWithType(ctx, imgURL, "zone", zone.ID)
 		if err != nil {
