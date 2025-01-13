@@ -9,12 +9,12 @@ require (
 	github.com/gin-contrib/pprof v1.5.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/google/martian/v3 v3.3.3
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0
 	github.com/jackc/pgx/v5 v5.6.0
 	github.com/jinzhu/copier v0.4.0
 	github.com/joho/godotenv v1.5.1
-	github.com/lib/pq v1.10.9
 	github.com/nicksnyder/go-i18n/v2 v2.4.0
 	github.com/redis/go-redis/v9 v9.4.0
 	github.com/spf13/cobra v1.8.1
@@ -43,7 +43,6 @@ require (
 	golang.org/x/crypto v0.28.0
 	golang.org/x/net v0.30.0
 	golang.org/x/text v0.19.0
-	google.golang.org/api v0.201.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20240930140551-af27646dc61f
 	google.golang.org/grpc v1.67.1
 	google.golang.org/protobuf v1.35.1
@@ -130,6 +129,7 @@ require (
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.26.0 // indirect
 	golang.org/x/time v0.8.0 // indirect
+	google.golang.org/api v0.201.0 // indirect
 	google.golang.org/genproto v0.0.0-20241007155032-5fefd90f89a9 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241007155032-5fefd90f89a9 // indirect
 	google.golang.org/grpc/stats/opentelemetry v0.0.0-20240907200651-3ffb98b2c93a // indirect

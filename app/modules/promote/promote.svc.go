@@ -6,6 +6,7 @@ import (
 	promotedto "app/app/modules/promote/dto"
 	promoteent "app/app/modules/promote/ent"
 	helper "app/helper/googleStorage"
+	"app/internal/modules/log"
 	"context"
 	"mime/multipart"
 
@@ -43,10 +44,13 @@ func (service *PromoteService) CreatePromote(ctx context.Context, req *promotedt
 	imageURLs := []string{}
 
 	for _, file := range files {
-		imgURLPtr, err := helper.UploadFileGCS(file)
+		var imgURLPtr *string
+		// imgURLPtr, err := helper.UploadFileGCS(file)
 		if err != nil {
 			return nil, err
 		}
+
+		log.Info("file: %v", file)
 
 		var imgURL string
 		if imgURLPtr != nil {
