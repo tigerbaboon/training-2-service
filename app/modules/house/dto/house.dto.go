@@ -39,6 +39,7 @@ type HouseResponse struct {
 	SellType          string              `json:"sell_type"`
 	Size              float64             `json:"size"`
 	Amenity           []AmenityResponse   `json:"amenity"`
+	AmenityID         []string            `json:"amenity_id"`
 	Floor             float64             `json:"floor"`
 	Price             float64             `json:"price"`
 	NumberOfRooms     int64               `json:"number_of_rooms"`

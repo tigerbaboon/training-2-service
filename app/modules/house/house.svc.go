@@ -151,13 +151,14 @@ func (svc *HouseService) GetHouseByID(ctx context.Context, id string) (*housedto
 
 	query := svc.db.NewSelect().
 		TableExpr("houses as h").
-		Column("h.id", "h.house_name", "h.house_type", "h.sell_type", "h.size", "h.floor", "h.price", "h.number_of_rooms", "h.number_of_bathrooms", "h.water_rate", "h.electricity_rate", "h.description", "h.address", "h.location_latitute", "h.location_longitute", "h.is_recommend", "h.created_at", "h.confirmation").
+		Column("h.id", "h.house_name", "h.house_type", "h.sell_type", "h.size", "h.floor", "h.price", "h.number_of_rooms", "h.number_of_bathrooms", "h.water_rate", "h.electricity_rate", "h.description", "h.address", "h.location_latitute", "h.location_longitute", "h.is_recommend", "h.created_at", "h.confirmation", "h.amenity_id").
 		ColumnExpr("z.id as zone__id, z.zone_name as zone__zone_name").
 		ColumnExpr("c.first_name as contact_info__first_name, c.last_name as contact_info__last_name, c.phone_number as contact_info__phone_number, c.line_id as contact_info__line_id").
 		ColumnExpr("i.id as images_main__id, i.image_url as images_main__url, i.type as images_main__type").
 		Join("LEFT JOIN zone_entities as z ON h.zone_id = z.id").
 		Join("LEFT JOIN contacts as c ON h.id = c.house_id").
 		Join("LEFT JOIN images as i ON h.id = i.s_id AND i.type = ? AND i.deleted_at IS NULL", "cover").
+		Join("LEFT JOIN amenity_entities as a ON h.amenity_id = a.id").
 		Where("h.id = ?", id)
 
 	err := query.Scan(ctx, &house)
@@ -181,13 +182,15 @@ func (svc *HouseService) GetHouseByID(ctx context.Context, id string) (*housedto
 	var amenities []housedto.AmenityResponse
 	err = svc.db.NewSelect().
 		TableExpr("amenity_entities as a").
-		Column("a.id", "a.amenity_name").
-		Where("a.id IN (?)", bun.In(house.Amenity)).
+		Column("a.id", "a.icons").
+		ColumnExpr("a.amenity_name as name").
+		Where("a.id IN (?)", bun.In(house.AmenityID)).
 		Scan(ctx, &amenities)
 	if err != nil {
 		return nil, err
 	}
 	house.Amenity = amenities
+	house.AmenityID = nil
 
 	return &house, nil
 }
