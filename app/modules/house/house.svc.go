@@ -656,6 +656,7 @@ func (svc *HouseService) GetHouseCountByZone(ctx context.Context) ([]housedto.Zo
 		Join("LEFT JOIN zone_entities as z ON h.zone_id = z.id").
 		Group("z.zone_name").
 		Order("z.zone_name ASC").
+		Where("h.confirmation = ?", "approved").
 		Where("h.deleted_at IS NULL").
 		Scan(ctx, &zoneCountResponses)
 	if err != nil {
