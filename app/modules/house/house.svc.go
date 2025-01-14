@@ -173,6 +173,7 @@ func (svc *HouseService) GetHouseByID(ctx context.Context, id string) (*housedto
 		ColumnExpr("i.image_url as url").
 		Column("i.type").
 		Where("i.s_id = ? AND i.type = ?", id, "original").
+		Where("i.deleted_at IS NULL").
 		Scan(ctx, &images)
 	if err != nil {
 		return nil, err
