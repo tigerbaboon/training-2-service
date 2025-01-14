@@ -7,6 +7,7 @@ import (
 	housedto "app/app/modules/house/dto"
 	houseent "app/app/modules/house/ent"
 	"app/app/modules/image"
+	imageent "app/app/modules/image/ent"
 	"app/app/modules/manager"
 	"app/app/modules/user"
 	"app/app/modules/zone"
@@ -422,51 +423,62 @@ func (svc *HouseService) UpdateHouse(ctx context.Context, id string, req *housed
 		}
 	}
 
-	oldImages, err := svc.ImageService.GetImagesByID(ctx, house.ID)
-	if err != nil {
-		return err
-	}
-
-	remainingImageIDs := strings.Split(req.RemainingImageIDs[0], ",")
-	remainingImageMap := make(map[string]bool)
-	for _, id := range remainingImageIDs {
-		remainingImageMap[id] = true
-	}
-
-	for _, img := range oldImages {
-		if img.ID == req.RemainingImageMainID {
-			continue
-		}
-		if !remainingImageMap[img.ID] {
-			err = svc.ImageService.DeleteImageByID(ctx, img.ID)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
 	if imageMainFile != nil {
-		imgURLPtr, err := helper.UploadFileGCS(imageMainFile)
+		imgURL, err := helper.UploadFileGCS(imageMainFile)
 		if err != nil {
 			return err
 		}
-		if imgURLPtr != nil {
-			err = svc.ImageService.CreateImagesWithType(ctx, *imgURLPtr, "cover", house.ID)
-			if err != nil {
-				return err
+		if imgURL != nil {
+			mainImage := &imageent.Images{}
+			err = svc.db.NewSelect().
+				Model(mainImage).
+				Where("id = ?", req.RemainingImageMainID).
+				Scan(ctx)
+			if err == nil {
+				mainImage.ImageURL = *imgURL
+				_, err = svc.db.NewUpdate().
+					Model(mainImage).
+					Where("id = ?", req.RemainingImageMainID).
+					Exec(ctx)
+				if err != nil {
+					return err
+				}
+			} else {
+				err = svc.ImageService.CreateImagesWithType(ctx, *imgURL, "cover", house.ID)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
 
-	for _, file := range imageFiles {
-		imgURLPtr, err := helper.UploadFileGCS(file)
+	for i, file := range imageFiles {
+		imgURL, err := helper.UploadFileGCS(file)
 		if err != nil {
 			return err
 		}
-		if imgURLPtr != nil {
-			err = svc.ImageService.CreateImagesWithType(ctx, *imgURLPtr, "original", house.ID)
-			if err != nil {
-				return err
+		if imgURL != nil {
+			img := &imageent.Images{}
+			if i < len(req.RemainingImageIDs) {
+				err = svc.db.NewSelect().
+					Model(img).
+					Where("id = ?", req.RemainingImageIDs[i]).
+					Scan(ctx)
+				if err == nil {
+					img.ImageURL = *imgURL
+					_, err = svc.db.NewUpdate().
+						Model(img).
+						Where("id = ?", req.RemainingImageIDs[i]).
+						Exec(ctx)
+					if err != nil {
+						return err
+					}
+				}
+			} else {
+				err = svc.ImageService.CreateImagesWithType(ctx, *imgURL, "original", house.ID)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
